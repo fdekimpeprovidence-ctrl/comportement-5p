@@ -1,0 +1,736 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Carnet de comportement — 5P</title>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Comportement 5P">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #F7F6F3;
+  --bg2: #EFEDE8;
+  --bg3: #E5E2DB;
+  --surface: #FFFFFF;
+  --border: #DDD9D0;
+  --border2: #CBC7BE;
+  --text: #1C1A17;
+  --text2: #6B6760;
+  --text3: #9D9A94;
+  --accent: #3C3489;
+  --accent2: #6259C4;
+  --red: #C8391A;
+  --red-bg: #FDF0EC;
+  --red-mid: #F3C5B8;
+  --orange: #B85C00;
+  --orange-bg: #FDF3E7;
+  --green: #2D6B1A;
+  --green-bg: #EDF5E8;
+  --blue-bg: #EEEDFE;
+  --radius: 10px;
+  --shadow: 0 1px 3px rgba(0,0,0,.08), 0 1px 2px rgba(0,0,0,.04);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; font-size: 14px; }
+
+/* ── SYNC STATUS ── */
+#syncBar { position: fixed; top: 0; left: 0; right: 0; z-index: 200; height: 3px; background: var(--accent); transform: scaleX(0); transform-origin: left; transition: transform .4s ease, opacity .4s ease; }
+#syncBar.active { transform: scaleX(1); }
+#syncBar.done { opacity: 0; }
+#syncStatus { position: fixed; bottom: 16px; right: 16px; font-size: 12px; font-family: 'DM Mono', monospace; padding: 6px 12px; border-radius: 20px; background: var(--surface); border: 0.5px solid var(--border); color: var(--text2); box-shadow: var(--shadow); transition: all .3s; z-index: 200; opacity: 0; pointer-events: none; }
+#syncStatus.show { opacity: 1; }
+#syncStatus.error { background: var(--red-bg); color: var(--red); border-color: var(--red-mid); }
+
+/* ── HEADER ── */
+.header { background: var(--surface); border-bottom: 1px solid var(--border); padding: 14px 20px; display: flex; align-items: center; gap: 14px; flex-wrap: wrap; position: sticky; top: 0; z-index: 100; box-shadow: var(--shadow); }
+.header-left h1 { font-size: 16px; font-weight: 600; letter-spacing: -.02em; }
+.header-left p { font-size: 11px; color: var(--text3); font-family: 'DM Mono', monospace; margin-top: 1px; }
+.header-right { margin-left: auto; display: flex; gap: 8px; align-items: center; }
+select { font-family: 'DM Sans', sans-serif; font-size: 13px; padding: 5px 10px; border: 1px solid var(--border); border-radius: 7px; background: var(--bg); color: var(--text); outline: none; cursor: pointer; }
+select:focus { border-color: var(--accent2); }
+
+/* ── TABS ── */
+.tabs { display: flex; background: var(--surface); border-bottom: 1px solid var(--border); overflow-x: auto; padding: 0 8px; }
+.tab { padding: 10px 14px; font-size: 13px; font-weight: 500; cursor: pointer; border-bottom: 2px solid transparent; color: var(--text3); transition: all .15s; white-space: nowrap; user-select: none; }
+.tab.active { border-bottom-color: var(--accent); color: var(--accent); }
+.tab:hover:not(.active) { color: var(--text2); background: var(--bg); }
+
+/* ── VIEWS ── */
+.view { display: none; padding: 16px 18px; max-width: 1100px; }
+.view.active { display: block; }
+
+/* ── BUTTONS ── */
+.btn { font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 500; padding: 6px 13px; border: 1px solid var(--border); border-radius: 7px; background: var(--surface); color: var(--text); cursor: pointer; display: inline-flex; align-items: center; gap: 6px; transition: all .12s; white-space: nowrap; }
+.btn:hover { background: var(--bg2); border-color: var(--border2); }
+.btn.prim { background: var(--accent); color: #fff; border-color: var(--accent); }
+.btn.prim:hover { background: var(--accent2); border-color: var(--accent2); }
+
+/* ── TOOLBAR ── */
+.toolbar { display: flex; gap: 8px; margin-bottom: 14px; flex-wrap: wrap; align-items: center; }
+input[type=text], input[type=date], textarea {
+  font-family: 'DM Sans', sans-serif; font-size: 13px; padding: 6px 10px;
+  border: 1px solid var(--border); border-radius: 7px;
+  background: var(--bg); color: var(--text); outline: none;
+}
+input:focus, textarea:focus { border-color: var(--accent2); background: var(--surface); }
+
+/* ── STUDENT GRID ── */
+.student-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(195px, 1fr)); gap: 10px; }
+.scard { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 12px 14px; cursor: pointer; transition: all .15s; box-shadow: var(--shadow); }
+.scard:hover { border-color: var(--accent2); transform: translateY(-1px); box-shadow: 0 4px 12px rgba(60,52,137,.1); }
+.scard.lv-warn { border-left: 3px solid #E89A2A; }
+.scard.lv-danger { border-left: 3px solid var(--red); }
+.scard.lv-ticket { border-left: 3px solid #8B1A0A; }
+.scard-name { font-size: 14px; font-weight: 600; margin-bottom: 6px; letter-spacing: -.01em; }
+.scard-stats { display: flex; gap: 5px; flex-wrap: wrap; }
+.badge { font-size: 11px; font-weight: 500; padding: 2px 7px; border-radius: 5px; font-family: 'DM Mono', monospace; }
+.b-bad { background: var(--red-bg); color: var(--red); }
+.b-good { background: var(--green-bg); color: var(--green); }
+.b-warn { background: var(--orange-bg); color: var(--orange); }
+.b-danger { background: var(--red-bg); color: var(--red); }
+.b-ticket { background: #FDE8E4; color: #8B1A0A; font-weight: 600; }
+
+/* ── MODAL ── */
+.overlay { display: none; position: fixed; inset: 0; background: rgba(28,26,23,.45); z-index: 150; align-items: center; justify-content: center; padding: 16px; backdrop-filter: blur(2px); }
+.overlay.open { display: flex; }
+.modal { background: var(--surface); border-radius: 14px; width: 100%; max-width: 580px; max-height: 90vh; overflow-y: auto; box-shadow: 0 20px 60px rgba(0,0,0,.2); }
+.mhead { padding: 16px 20px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; background: var(--surface); z-index: 2; border-radius: 14px 14px 0 0; }
+.mhead h2 { font-size: 17px; font-weight: 600; letter-spacing: -.02em; }
+.mclose { background: var(--bg2); border: none; width: 28px; height: 28px; border-radius: 50%; cursor: pointer; font-size: 16px; display: flex; align-items: center; justify-content: center; color: var(--text2); transition: background .12s; }
+.mclose:hover { background: var(--bg3); }
+.mbody { padding: 16px 20px; }
+.tsec { margin-bottom: 20px; }
+.tsec-title { font-size: 10px; font-weight: 600; color: var(--text3); text-transform: uppercase; letter-spacing: .08em; margin-bottom: 10px; font-family: 'DM Mono', monospace; }
+.trow { display: flex; align-items: center; gap: 8px; padding: 7px 0; border-bottom: 1px solid var(--bg2); }
+.trow:last-child { border-bottom: none; }
+.tlabel { flex: 1; font-size: 13px; color: var(--text); }
+.tmarks { display: flex; gap: 3px; align-items: center; min-width: 85px; }
+.tgroup { display: flex; gap: 2px; }
+.tm { width: 3px; height: 16px; border-radius: 2px; display: inline-block; }
+.tm.bad { background: var(--red); }
+.tm.good { background: var(--green); }
+.tm.diag { transform: rotate(-65deg) translate(6px, -3px); }
+.tcount { font-size: 13px; font-weight: 600; min-width: 22px; text-align: right; font-family: 'DM Mono', monospace; }
+.tbtns { display: flex; gap: 3px; }
+.tbtn { width: 26px; height: 26px; border-radius: 6px; border: 1px solid var(--border); background: var(--bg); cursor: pointer; font-size: 15px; display: flex; align-items: center; justify-content: center; color: var(--text); transition: background .1s; }
+.tbtn:hover { background: var(--bg3); }
+.tbtn.pb:hover { background: var(--red-bg); }
+.tbtn.pg:hover { background: var(--green-bg); }
+
+/* ── ALERT BARS ── */
+.abar { padding: 8px 12px; border-radius: 8px; font-size: 13px; margin-bottom: 8px; display: flex; align-items: center; gap: 8px; font-weight: 500; }
+.ab-warn { background: var(--orange-bg); color: var(--orange); }
+.ab-danger { background: var(--red-bg); color: var(--red); }
+.ab-ticket { background: #FDE8E4; color: #8B1A0A; }
+.ab-next { background: var(--bg2); color: var(--text3); font-weight: 400; font-size: 12px; }
+
+/* ── RECAP TABLE ── */
+.recap-wrap { overflow-x: auto; }
+table.recap { width: 100%; border-collapse: collapse; font-size: 12px; }
+table.recap th { text-align: left; padding: 8px 8px; border-bottom: 1px solid var(--border); font-weight: 600; color: var(--text3); font-size: 10px; text-transform: uppercase; letter-spacing: .06em; font-family: 'DM Mono', monospace; white-space: nowrap; }
+table.recap td { padding: 8px 8px; border-bottom: 1px solid var(--bg2); vertical-align: middle; }
+table.recap tr:hover td { background: var(--bg); }
+.nl { cursor: pointer; color: var(--accent); font-weight: 500; }
+.nl:hover { text-decoration: underline; }
+.dot { width: 7px; height: 7px; border-radius: 50%; display: inline-block; margin-right: 4px; }
+.dok { background: var(--green); } .dwarn { background: #E89A2A; } .ddanger { background: var(--red); } .dticket { background: #8B1A0A; }
+
+/* ── JOURNAL ── */
+.jitem { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 9px 13px; font-size: 13px; display: flex; gap: 10px; align-items: center; margin-bottom: 7px; }
+.jdate { color: var(--text3); min-width: 80px; font-size: 11px; font-family: 'DM Mono', monospace; }
+.jstu { font-weight: 600; min-width: 110px; font-size: 13px; }
+.jtype { padding: 2px 7px; border-radius: 5px; font-size: 11px; white-space: nowrap; font-family: 'DM Mono', monospace; }
+
+/* ── SANCTIONS ── */
+.san-block { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); margin-bottom: 10px; overflow: hidden; box-shadow: var(--shadow); }
+.san-header { padding: 12px 16px; display: flex; align-items: center; gap: 10px; cursor: pointer; user-select: none; transition: background .12s; }
+.san-header:hover { background: var(--bg); }
+.san-name { font-size: 14px; font-weight: 600; flex: 1; letter-spacing: -.01em; }
+.san-pills { display: flex; gap: 5px; flex-wrap: wrap; }
+.pill { font-size: 11px; font-weight: 500; padding: 2px 8px; border-radius: 20px; font-family: 'DM Mono', monospace; }
+.pill-ticket { background: var(--red-bg); color: var(--red); }
+.pill-retenue { background: #FDE8E4; color: #8B1A0A; }
+.pill-renvoi { background: var(--blue-bg); color: var(--accent); }
+.san-chev { font-size: 12px; color: var(--text3); margin-left: 4px; transition: transform .2s; }
+.san-chev.open { transform: rotate(90deg); }
+.san-body { display: none; padding: 0 16px 16px; border-top: 1px solid var(--bg2); }
+.san-body.open { display: block; }
+.san-sec { margin-top: 14px; }
+.san-sec-title { font-size: 10px; font-weight: 600; color: var(--text3); text-transform: uppercase; letter-spacing: .08em; margin-bottom: 10px; font-family: 'DM Mono', monospace; }
+
+/* ── TIMELINE ── */
+.timeline { padding-left: 20px; position: relative; }
+.tl-item { position: relative; padding-bottom: 12px; }
+.tl-item:last-child { padding-bottom: 0; }
+.tl-line { position: absolute; left: -13px; top: 14px; bottom: 0; width: 1px; background: var(--border); }
+.tl-item:last-child .tl-line { display: none; }
+.tl-dot { position: absolute; left: -17px; top: 7px; width: 9px; height: 9px; border-radius: 50%; border: 2px solid var(--red); background: var(--surface); }
+.tl-dot.retenue { border-color: #8B1A0A; background: #FDE8E4; }
+.tl-dot.manquante { border-color: var(--border2); background: var(--bg3); width: 7px; height: 7px; left: -16px; }
+.tl-card { background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 8px 12px; font-size: 13px; }
+.tl-card.is-retenue { background: #FEF3F1; border-color: var(--red-mid); }
+.tl-card.is-manquante { background: none; border: 1px dashed var(--border2); color: var(--text3); font-size: 12px; text-align: center; padding: 6px 12px; }
+.tl-top { display: flex; align-items: center; gap: 8px; }
+.tl-date { font-size: 11px; color: var(--text3); font-family: 'DM Mono', monospace; min-width: 74px; }
+.tl-label { flex: 1; font-weight: 500; }
+.tl-del { background: none; border: none; cursor: pointer; color: var(--text3); font-size: 13px; padding: 0 3px; line-height: 1; border-radius: 4px; }
+.tl-del:hover { color: var(--red); background: var(--red-bg); }
+.tl-sub { font-size: 12px; color: var(--text2); margin-top: 3px; }
+
+/* ── EVENT ROWS (renvois) ── */
+.ev-row { display: flex; align-items: flex-start; gap: 8px; padding: 7px 0; border-bottom: 1px solid var(--bg2); font-size: 13px; }
+.ev-row:last-child { border-bottom: none; }
+.ev-date { min-width: 78px; color: var(--text3); font-size: 11px; font-family: 'DM Mono', monospace; padding-top: 2px; }
+.ev-content { flex: 1; }
+.ev-del { background: none; border: none; cursor: pointer; color: var(--text3); font-size: 13px; padding: 0 3px; border-radius: 4px; }
+.ev-del:hover { color: var(--red); background: var(--red-bg); }
+
+/* ── ADD FORM ── */
+.add-form { background: var(--bg); border: 1px solid var(--border); border-radius: 8px; padding: 12px 14px; margin-top: 10px; }
+.add-form-title { font-size: 11px; font-weight: 600; color: var(--text3); margin-bottom: 10px; font-family: 'DM Mono', monospace; text-transform: uppercase; letter-spacing: .06em; }
+.form-row { display: flex; gap: 8px; flex-wrap: wrap; align-items: flex-end; }
+.form-group { display: flex; flex-direction: column; gap: 4px; }
+.form-group label { font-size: 11px; color: var(--text3); font-weight: 500; }
+.san-empty { font-size: 13px; color: var(--text3); padding: 8px 0; font-style: italic; }
+
+/* ── FILTER BAR ── */
+.sfilter-bar { display: flex; gap: 8px; margin-bottom: 14px; flex-wrap: wrap; }
+.sfilter { font-size: 12px; font-weight: 500; padding: 5px 12px; border-radius: 20px; border: 1px solid var(--border); cursor: pointer; background: var(--surface); color: var(--text2); transition: all .12s; }
+.sfilter.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+.sfilter:hover:not(.active) { border-color: var(--border2); }
+
+/* ── LOADING ── */
+#loadingScreen { position: fixed; inset: 0; background: var(--bg); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px; z-index: 999; transition: opacity .4s; }
+#loadingScreen.hidden { opacity: 0; pointer-events: none; }
+.loading-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); display: inline-block; animation: pulse 1.2s ease-in-out infinite; }
+.loading-dot:nth-child(2) { animation-delay: .2s; }
+.loading-dot:nth-child(3) { animation-delay: .4s; }
+@keyframes pulse { 0%,80%,100%{transform:scale(.6);opacity:.3} 40%{transform:scale(1);opacity:1} }
+
+@media(max-width:500px){
+  .student-grid{grid-template-columns:1fr 1fr}
+  table.recap{font-size:11px}
+  .header{padding:10px 14px}
+}
+</style>
+</head>
+<body>
+
+<div id="loadingScreen">
+  <div style="font-size:15px;font-weight:600;color:var(--text2);font-family:'DM Mono',monospace">Comportement 5P</div>
+  <div style="display:flex;gap:8px">
+    <div class="loading-dot"></div>
+    <div class="loading-dot"></div>
+    <div class="loading-dot"></div>
+  </div>
+  <div style="font-size:12px;color:var(--text3)">Connexion à Firebase…</div>
+</div>
+
+<div id="syncBar"></div>
+<div id="syncStatus"></div>
+
+<div class="header">
+  <div class="header-left">
+    <h1>📋 Comportement 5P</h1>
+    <p>École La Providence · <span id="headerTrim">T3</span></p>
+  </div>
+  <div class="header-right">
+    <select id="trimSel">
+      <option value="T1">Trimestre 1</option>
+      <option value="T2">Trimestre 2</option>
+      <option value="T3" selected>Trimestre 3</option>
+    </select>
+  </div>
+</div>
+
+<div class="tabs">
+  <div class="tab active" onclick="switchTab('eleves')">Élèves</div>
+  <div class="tab" onclick="switchTab('recap')">Récapitulatif</div>
+  <div class="tab" onclick="switchTab('journal')">Journal</div>
+  <div class="tab" onclick="switchTab('sanctions')">🎫 Sanctions</div>
+</div>
+
+<div id="view-eleves" class="view active">
+  <div class="toolbar">
+    <input type="text" id="searchInput" placeholder="🔍 Rechercher…" oninput="renderStudents()" style="width:170px">
+    <select id="filterSel" onchange="renderStudents()">
+      <option value="">Tous les élèves</option>
+      <option value="ok">✅ Sans alerte</option>
+      <option value="warn">⚠ Remarque 1</option>
+      <option value="danger">⛔ Remarque 2</option>
+      <option value="ticket">🎫 Ticket</option>
+    </select>
+  </div>
+  <div class="student-grid" id="studentGrid"></div>
+</div>
+
+<div id="view-recap" class="view">
+  <div class="recap-wrap">
+    <table class="recap">
+      <thead><tr>
+        <th>Élève</th><th>∑⚠</th>
+        <th>Bav.</th><th>Resp.</th><th>Bag.</th><th>Mat.</th><th>Ass.</th><th>Soin</th><th>Dev.</th><th>Dér.</th>
+        <th>✓Part.</th><th>✓Serv.</th><th>✓Prêt</th><th>Seuil</th>
+      </tr></thead>
+      <tbody id="recapBody"></tbody>
+    </table>
+  </div>
+</div>
+
+<div id="view-journal" class="view">
+  <div id="journalList"></div>
+</div>
+
+<div id="view-sanctions" class="view">
+  <div class="sfilter-bar">
+    <span class="sfilter active" onclick="setSanFilter(this,'')">Tous</span>
+    <span class="sfilter" onclick="setSanFilter(this,'ticket')">🎫 Avec tickets</span>
+    <span class="sfilter" onclick="setSanFilter(this,'retenue')">⏱ Avec retenues</span>
+    <span class="sfilter" onclick="setSanFilter(this,'renvoi')">🚫 Avec renvois</span>
+  </div>
+  <div id="sanctionsList"></div>
+</div>
+
+<div class="overlay" id="overlay" onclick="bgClose(event)">
+  <div class="modal">
+    <div class="mhead">
+      <h2 id="mname">—</h2>
+      <button class="mclose" onclick="closeModal()">✕</button>
+    </div>
+    <div class="mbody" id="mbody"></div>
+  </div>
+</div>
+
+<!-- Firebase -->
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getFirestore, doc, getDoc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyDw1fFgaqxY34NkQSAFEWaKtiUBwx5c5z0",
+  authDomain: "comportement-p5.firebaseapp.com",
+  projectId: "comportement-p5",
+  storageBucket: "comportement-p5.firebasestorage.app",
+  messagingSenderId: "497890745059",
+  appId: "1:497890745059:web:1c5ec4f06c6537d7bb83d6"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+const ELEVES = ["Abdelkader","Adam","Alyia","Bryan","David","Dua","Filip","Ismaël","Jeremy","Kim Odette","Laura","Loujain","Maja","Malik","Maria","Mathéo","Mélanie","Nada","Nael","Noah","Salimatou","Sofiane","Stepan","Toby","Victoria","Wissam","Yassir"];
+const BAD = ["Bavardages","Manque de respect envers l'adulte","Bagarre / insulte","N'a pas son matériel","S'assied mal en classe","Manque de soin","Devoir non fait","Dérange le cours"];
+const GOOD = ["Participe en classe","Rend spontanément service","Est prêt à temps"];
+
+let st = initState();
+let curEl = null, curT = "T3", sanFilter = "";
+let formData = {};
+let saveTimer = null;
+let ignoreSnapshot = false;
+
+function initState() {
+  const s = { tr: {}, sanctions: {} };
+  ["T1","T2","T3"].forEach(t => {
+    s.tr[t] = {};
+    ELEVES.forEach(e => { s.tr[t][e] = { bad: Array(8).fill(0), good: Array(3).fill(0), hist: [], note: "" }; });
+  });
+  ELEVES.forEach(e => { s.sanctions[e] = { tickets: [], retenues: [], renvois: [] }; });
+  return s;
+}
+
+function ensureState() {
+  if (!st.tr) st.tr = {};
+  if (!st.sanctions) st.sanctions = {};
+  ["T1","T2","T3"].forEach(t => {
+    if (!st.tr[t]) st.tr[t] = {};
+    ELEVES.forEach(e => {
+      if (!st.tr[t][e]) st.tr[t][e] = { bad: Array(8).fill(0), good: Array(3).fill(0), hist: [], note: "" };
+    });
+  });
+  ELEVES.forEach(e => {
+    if (!st.sanctions[e]) st.sanctions[e] = { tickets: [], retenues: [], renvois: [] };
+    if (!st.sanctions[e].renvois) st.sanctions[e].renvois = [];
+  });
+}
+
+// ── Firebase sync ──
+const DOC_REF = doc(db, "ecole", "comportement5p");
+
+async function loadFromFirebase() {
+  try {
+    const snap = await getDoc(DOC_REF);
+    if (snap.exists()) {
+      st = snap.data();
+      ensureState();
+    }
+    showSync("✓ Synchronisé", false);
+  } catch(e) {
+    showSync("⚠ Hors ligne — données locales", true);
+    const local = localStorage.getItem("comport5p_backup");
+    if (local) { try { st = JSON.parse(local); ensureState(); } catch {} }
+  }
+  document.getElementById('loadingScreen').classList.add('hidden');
+  renderStudents();
+}
+
+// Écoute les changements en temps réel
+onSnapshot(DOC_REF, (snap) => {
+  if (ignoreSnapshot) return;
+  if (snap.exists()) {
+    st = snap.data();
+    ensureState();
+    renderStudents();
+    const activeTab = document.querySelector('.tab.active')?.textContent;
+    if (activeTab?.includes('Récap')) renderRecap();
+    if (activeTab?.includes('Journal')) renderJournal();
+    if (activeTab?.includes('Sanctions')) renderSanctions();
+    showSync("✓ Mis à jour", false);
+  }
+}, () => { showSync("⚠ Hors ligne", true); });
+
+function scheduleSave() {
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(saveToFirebase, 1200);
+}
+
+async function saveToFirebase() {
+  ignoreSnapshot = true;
+  showSyncBar();
+  try {
+    localStorage.setItem("comport5p_backup", JSON.stringify(st));
+    await setDoc(DOC_REF, st);
+    showSync("✓ Sauvegardé", false);
+  } catch(e) {
+    showSync("⚠ Erreur de sauvegarde", true);
+    localStorage.setItem("comport5p_backup", JSON.stringify(st));
+  }
+  setTimeout(() => { ignoreSnapshot = false; }, 2000);
+}
+
+function showSyncBar() {
+  const bar = document.getElementById('syncBar');
+  bar.classList.remove('done');
+  bar.classList.add('active');
+  setTimeout(() => { bar.classList.add('done'); setTimeout(() => bar.classList.remove('active','done'), 400); }, 800);
+}
+function showSync(msg, isError) {
+  const el = document.getElementById('syncStatus');
+  el.textContent = msg;
+  el.className = 'show' + (isError ? ' error' : '');
+  clearTimeout(el._t);
+  el._t = setTimeout(() => el.className = '', 3000);
+}
+
+// ── Helpers ──
+function gd(n) { ensureState(); return st.tr[curT][n]; }
+function gs(n) { ensureState(); return st.sanctions[n]; }
+function totBad(n) { return gd(n).bad.reduce((a,b)=>a+b,0); }
+function lv(n) { const t=totBad(n); return t>=15?"ticket":t>=10?"danger":t>=5?"warn":"ok"; }
+function lvLabel(n) { const t=totBad(n); return t>=15?"🎫 Ticket":t>=10?"⛔ Remarque 2":t>=5?"⚠ Remarque 1":"✅ OK"; }
+function fmtDate(iso) { const d=new Date(iso); return d.toLocaleDateString('fr-BE',{day:'2-digit',month:'2-digit',year:'numeric'}); }
+function today() { return new Date().toLocaleDateString('fr-BE',{day:'2-digit',month:'2-digit',year:'numeric'}); }
+function todayISO() { return new Date().toISOString().slice(0,10); }
+
+// ── Trimestre ──
+document.getElementById('trimSel').addEventListener('change', function() {
+  curT = this.value;
+  document.getElementById('headerTrim').textContent = curT;
+  renderStudents();
+});
+
+// ── Tabs ──
+window.switchTab = function(t) {
+  document.querySelectorAll('.tab').forEach(el=>el.classList.remove('active'));
+  document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+  const tabs = ['eleves','recap','journal','sanctions'];
+  document.querySelectorAll('.tab')[tabs.indexOf(t)].classList.add('active');
+  document.getElementById('view-'+t).classList.add('active');
+  if (t==='recap') renderRecap();
+  if (t==='journal') renderJournal();
+  if (t==='sanctions') renderSanctions();
+}
+
+// ── Élèves ──
+function renderStudents() {
+  const s = document.getElementById('searchInput').value.toLowerCase();
+  const f = document.getElementById('filterSel').value;
+  const g = document.getElementById('studentGrid'); g.innerHTML = '';
+  ELEVES.filter(e=>e.toLowerCase().includes(s)).filter(e=>!f||lv(e)===f).forEach(name => {
+    const d=gd(name), sd=gs(name);
+    const tb=d.bad.reduce((a,b)=>a+b,0), tg=d.good.reduce((a,b)=>a+b,0), al=lv(name);
+    const c = document.createElement('div');
+    c.className = 'scard'+(al!=='ok'?' lv-'+al:'');
+    c.onclick = ()=>openModal(name);
+    let badges = '';
+    if(tb>0) badges+=`<span class="badge ${al==='ticket'||al==='danger'?'b-danger':al==='warn'?'b-warn':'b-bad'}">${tb} ⚠</span>`;
+    if(tg>0) badges+=`<span class="badge b-good">${tg} ✓</span>`;
+    if(al!=='ok') badges+=`<span class="badge ${al==='ticket'?'b-ticket':al==='danger'?'b-danger':'b-warn'}">${lvLabel(name)}</span>`;
+    if(sd.tickets.length) badges+=`<span class="badge b-ticket">🎫${sd.tickets.length}</span>`;
+    if(sd.retenues.length) badges+=`<span class="badge b-danger">⏱${sd.retenues.length}</span>`;
+    if(sd.renvois?.length) badges+=`<span class="badge" style="background:var(--blue-bg);color:var(--accent)">🚫${sd.renvois.length}</span>`;
+    if(!tb&&!tg&&!sd.tickets.length) badges='<span style="font-size:11px;color:var(--text3)">—</span>';
+    c.innerHTML=`<div class="scard-name">${name}</div><div class="scard-stats">${badges}</div>`;
+    g.appendChild(c);
+  });
+}
+
+// ── Modal ──
+window.openModal = function(n) { curEl=n; document.getElementById('mname').textContent=n; renderModal(); document.getElementById('overlay').classList.add('open'); }
+window.closeModal = function() { document.getElementById('overlay').classList.remove('open'); renderStudents(); }
+window.bgClose = function(e) { if(e.target===document.getElementById('overlay')) closeModal(); }
+
+function marks(count, type) {
+  if(!count) return '<span style="font-size:11px;color:var(--text3)">—</span>';
+  let h=''; const groups=Math.floor(count/5), rem=count%5;
+  for(let g=0;g<groups;g++){ h+='<div class="tgroup">'; for(let i=0;i<4;i++) h+=`<div class="tm ${type}"></div>`; h+=`<div class="tm ${type} diag"></div></div>`; }
+  if(rem){ h+='<div class="tgroup">'; for(let i=0;i<rem;i++) h+=`<div class="tm ${type}"></div>`; h+='</div>'; }
+  return h;
+}
+
+function renderModal() {
+  const d=gd(curEl), tb=d.bad.reduce((a,b)=>a+b,0);
+  let alerts='';
+  if(tb>=15) alerts+=`<div class="abar ab-ticket">🎫 Ticket atteint (${tb} barres)</div>`;
+  else if(tb>=10) alerts+=`<div class="abar ab-danger">⛔ 2ème remarque JDC (${tb} barres)</div>`;
+  else if(tb>=5) alerts+=`<div class="abar ab-warn">⚠ 1ère remarque JDC (${tb} barres)</div>`;
+  const next=tb<5?5:tb<10?10:tb<15?15:null;
+  if(next&&next>tb) alerts+=`<div class="abar ab-next">Prochain seuil dans ${next-tb} barre(s)</div>`;
+  const badRows=BAD.map((l,i)=>`<div class="trow"><div class="tlabel">${l}</div><div class="tmarks">${marks(d.bad[i],'bad')}</div><div class="tcount" style="color:var(--red)">${d.bad[i]}</div><div class="tbtns"><button class="tbtn" onclick="addM(${i},'bad',-1)">−</button><button class="tbtn pb" onclick="addM(${i},'bad',1)">+</button></div></div>`).join('');
+  const goodRows=GOOD.map((l,i)=>`<div class="trow"><div class="tlabel">${l}</div><div class="tmarks">${marks(d.good[i],'good')}</div><div class="tcount" style="color:var(--green)">${d.good[i]}</div><div class="tbtns"><button class="tbtn" onclick="addM(${i},'good',-1)">−</button><button class="tbtn pg" onclick="addM(${i},'good',1)">+</button></div></div>`).join('');
+  const hist=[...d.hist].reverse().slice(0,25).map(h=>{ const bg=h.type==='good'?'var(--green-bg)':'var(--red-bg)',col=h.type==='good'?'var(--green)':'var(--red)'; return `<div class="trow"><span style="font-size:11px;color:var(--text3);font-family:'DM Mono',monospace;min-width:74px">${h.date}</span><span style="flex:1;font-size:13px">${h.label}</span><span style="font-size:11px;padding:2px 7px;border-radius:5px;background:${bg};color:${col};font-family:'DM Mono',monospace">${h.delta>0?'+':''}${h.delta}</span></div>`; }).join('')||'<div style="font-size:13px;color:var(--text3);padding:6px 0">Aucun historique.</div>';
+  document.getElementById('mbody').innerHTML=`
+    ${alerts}
+    <div class="tsec"><div class="tsec-title">Mauvais comportements</div>${badRows}</div>
+    <div class="tsec"><div class="tsec-title">Bons comportements</div>${goodRows}</div>
+    <div class="tsec"><div class="tsec-title">Note libre</div>
+      <textarea id="noteField" placeholder="Note personnelle…" style="width:100%;min-height:55px;font-size:13px;padding:8px;border:1px solid var(--border);border-radius:7px;background:var(--bg);color:var(--text);resize:vertical">${d.note||''}</textarea>
+      <button class="btn" style="margin-top:6px" onclick="saveNote()">Enregistrer</button>
+    </div>
+    <div class="tsec"><div class="tsec-title">Historique récent</div>${hist}</div>`;
+}
+
+window.addM = function(i, type, delta) {
+  const d=gd(curEl); d[type][i]=Math.max(0,d[type][i]+delta);
+  d.hist.push({date:today(),label:type==='bad'?BAD[i]:GOOD[i],type,delta});
+  scheduleSave(); renderModal();
+}
+window.saveNote = function() { gd(curEl).note=document.getElementById('noteField').value; scheduleSave(); }
+
+// ── Récap ──
+function renderRecap() {
+  const b=document.getElementById('recapBody'); b.innerHTML='';
+  ELEVES.forEach(name=>{
+    const d=gd(name),tb=d.bad.reduce((a,b)=>a+b,0),al=lv(name);
+    const dc=al==='ticket'?'dticket':al==='danger'?'ddanger':al==='warn'?'dwarn':'dok';
+    const tr=document.createElement('tr');
+    tr.innerHTML=`<td><span class="nl" onclick="openModal('${name}')">${name}</span></td><td style="font-weight:600;color:var(--red);font-family:'DM Mono',monospace">${tb||'—'}</td>${d.bad.map(v=>`<td style="font-family:'DM Mono',monospace">${v||'—'}</td>`).join('')}${d.good.map(v=>`<td style="color:var(--green);font-family:'DM Mono',monospace">${v||'—'}</td>`).join('')}<td><span class="dot ${dc}"></span>${lvLabel(name)}</td>`;
+    b.appendChild(tr);
+  });
+}
+
+// ── Journal ──
+function renderJournal() {
+  const c=document.getElementById('journalList'); c.innerHTML='';
+  const entries=[];
+  ELEVES.forEach(name=>{ (gd(name).hist||[]).forEach(h=>entries.push({name,...h})); });
+  entries.sort((a,b)=>{ const pa=a.date.split('/').reverse().join(''),pb=b.date.split('/').reverse().join(''); return pb.localeCompare(pa); });
+  if(!entries.length){ c.innerHTML='<div style="font-size:13px;color:var(--text3)">Aucun événement enregistré.</div>'; return; }
+  entries.slice(0,150).forEach(e=>{ const bg=e.type==='good'?'var(--green-bg)':'var(--red-bg)',col=e.type==='good'?'var(--green)':'var(--red)'; c.innerHTML+=`<div class="jitem"><span class="jdate">${e.date}</span><span class="jstu">${e.name}</span><span style="flex:1;color:var(--text2);font-size:13px">${e.label}</span><span class="jtype" style="background:${bg};color:${col}">${e.delta>0?'+':''}${e.delta}</span></div>`; });
+}
+
+// ── Sanctions ──
+window.setSanFilter = function(el, val) {
+  document.querySelectorAll('.sfilter').forEach(s=>s.classList.remove('active'));
+  el.classList.add('active'); sanFilter=val; renderSanctions();
+}
+
+function renderSanctions() {
+  ensureState();
+  const c=document.getElementById('sanctionsList'); c.innerHTML='';
+  const filtered=ELEVES.filter(name=>{
+    const sd=gs(name);
+    if(sanFilter==='ticket') return sd.tickets.length>0;
+    if(sanFilter==='retenue') return sd.retenues.length>0;
+    if(sanFilter==='renvoi') return (sd.renvois||[]).length>0;
+    return true;
+  });
+  filtered.forEach(name=>{
+    const sd=gs(name), idx=ELEVES.indexOf(name);
+    const nT=sd.tickets.length,nR=sd.retenues.length,nRen=(sd.renvois||[]).length;
+    let pills='';
+    if(nT) pills+=`<span class="pill pill-ticket">🎫 ${nT} ticket${nT>1?'s':''}</span>`;
+    if(nR) pills+=`<span class="pill pill-retenue">⏱ ${nR} retenue${nR>1?'s':''}</span>`;
+    if(nRen) pills+=`<span class="pill pill-renvoi">🚫 ${nRen} renvoi${nRen>1?'s':''}</span>`;
+    if(!nT&&!nR&&!nRen) pills=`<span style="font-size:12px;color:var(--text3)">Aucune sanction</span>`;
+    const block=document.createElement('div');
+    block.className='san-block'; block.id='block_'+idx;
+    block.innerHTML=`
+      <div class="san-header" onclick="toggleBlock(${idx})">
+        <div class="san-name">${name}</div>
+        <div class="san-pills">${pills}</div>
+        <span class="san-chev" id="chev_${idx}">▶</span>
+      </div>
+      <div class="san-body" id="sanb_${idx}"><div id="sanb_inner_${idx}"></div></div>`;
+    c.appendChild(block);
+  });
+}
+
+window.toggleBlock = function(idx) {
+  const body=document.getElementById('sanb_'+idx);
+  const chev=document.getElementById('chev_'+idx);
+  if(!body) return;
+  const opening=!body.classList.contains('open');
+  body.classList.toggle('open');
+  chev.classList.toggle('open');
+  if(opening){
+    if(!formData[idx]) formData[idx]={tkDate:todayISO(),tkRaison:'',tkNote:'',retDate:todayISO(),retNote:'',retEff:false,renDate:todayISO(),renRaison:'',renNote:''};
+    renderSanBody(idx);
+  }
+}
+
+function renderSanBody(idx) {
+  const name=ELEVES[idx], sd=gs(name);
+  const inner=document.getElementById('sanb_inner_'+idx);
+  if(!inner) return;
+  const tickets=sd.tickets||[], retenues=sd.retenues||[], renvois=sd.renvois||[];
+
+  // Timeline : groupes de 3 tickets → retenue
+  let tlItems=[], retIdx=0;
+  for(let i=0;i<tickets.length;i++){
+    tlItems.push({type:'ticket',data:tickets[i],origIdx:i});
+    if((i+1)%3===0){
+      const ret=retenues[retIdx];
+      tlItems.push(ret ? {type:'retenue',data:ret,origIdx:retIdx} : {type:'manquante'});
+      retIdx++;
+    }
+  }
+  while(retIdx<retenues.length){ tlItems.push({type:'retenue',data:retenues[retIdx],origIdx:retIdx}); retIdx++; }
+
+  let tlHtml='';
+  if(tlItems.length===0){
+    tlHtml='<div class="san-empty">Aucun ticket enregistré.</div>';
+  } else {
+    tlHtml='<div class="timeline">';
+    tlItems.forEach(item=>{
+      if(item.type==='ticket'){
+        const i=item.origIdx;
+        tlHtml+=`<div class="tl-item"><div class="tl-line"></div><div class="tl-dot"></div>
+          <div class="tl-card"><div class="tl-top">
+            <span class="tl-date">${item.data.date}</span>
+            <span class="tl-label">🎫 Ticket ${i+1}</span>
+            <button class="tl-del" onclick="delTicket(${idx},${i})">✕</button>
+          </div><div class="tl-sub">${item.data.raison||''}${item.data.note?' — '+item.data.note:''}</div></div></div>`;
+      } else if(item.type==='retenue'){
+        const i=item.origIdx;
+        tlHtml+=`<div class="tl-item"><div class="tl-line"></div><div class="tl-dot retenue"></div>
+          <div class="tl-card is-retenue"><div class="tl-top">
+            <span class="tl-date">${item.data.date}</span>
+            <span class="tl-label">⏱ Retenue ${i+1} — ${item.data.effectuee?'✅ Effectuée':'⏳ À venir'}</span>
+            <button class="tl-del" onclick="delRetenue(${idx},${i})">✕</button>
+          </div>${item.data.note?`<div class="tl-sub">${item.data.note}</div>`:''}</div></div>`;
+      } else {
+        tlHtml+=`<div class="tl-item"><div class="tl-line"></div><div class="tl-dot manquante"></div>
+          <div class="tl-card is-manquante">⚠ 3 tickets — retenue à planifier</div></div>`;
+      }
+    });
+    tlHtml+='</div>';
+  }
+
+  const fd=formData[idx];
+  let renHtml=renvois.length ? renvois.map((r,i)=>`<div class="ev-row">
+    <span class="ev-date">${r.date}</span>
+    <div class="ev-content"><div style="font-weight:500">${r.raison||'—'}</div>${r.note?`<div style="font-size:12px;color:var(--text2);margin-top:2px">${r.note}</div>`:''}</div>
+    <button class="ev-del" onclick="delRenvoi(${idx},${i})">✕</button>
+  </div>`).join('') : '<div class="san-empty">Aucun renvoi enregistré.</div>';
+
+  inner.innerHTML=`
+    <div class="san-sec">
+      <div class="san-sec-title">🎫 Tickets & Retenues</div>
+      ${tlHtml}
+      <div class="add-form">
+        <div class="add-form-title">Ajouter un ticket</div>
+        <div class="form-row">
+          <div class="form-group"><label>Date</label><input type="date" id="tk_date_${idx}" value="${fd.tkDate}" style="width:130px"></div>
+          <div class="form-group" style="flex:1"><label>Raison</label><input type="text" id="tk_raison_${idx}" placeholder="Motif du ticket…" style="width:100%"></div>
+          <div class="form-group"><label>Note (opt.)</label><input type="text" id="tk_note_${idx}" placeholder="Détail…" style="width:110px"></div>
+          <button class="btn prim" style="align-self:flex-end" onclick="addTicket(${idx})">+ Ticket</button>
+        </div>
+      </div>
+      <div class="add-form" style="margin-top:8px">
+        <div class="add-form-title">Ajouter une retenue</div>
+        <div class="form-row">
+          <div class="form-group"><label>Date</label><input type="date" id="ret_date_${idx}" value="${fd.retDate}" style="width:130px"></div>
+          <div class="form-group" style="flex:1"><label>Note / contexte</label><input type="text" id="ret_note_${idx}" placeholder="ex: retenue du vendredi…" style="width:100%"></div>
+          <div class="form-group" style="justify-content:flex-end;padding-bottom:3px"><label style="display:flex;align-items:center;gap:5px;font-size:12px"><input type="checkbox" id="ret_eff_${idx}"> Déjà effectuée</label></div>
+          <button class="btn prim" style="align-self:flex-end" onclick="addRetenue(${idx})">+ Retenue</button>
+        </div>
+      </div>
+    </div>
+    <div class="san-sec">
+      <div class="san-sec-title">🚫 Renvois (${renvois.length})</div>
+      ${renHtml}
+      <div class="add-form" style="margin-top:8px">
+        <div class="add-form-title">Ajouter un renvoi</div>
+        <div class="form-row">
+          <div class="form-group"><label>Date</label><input type="date" id="ren_date_${idx}" value="${fd.renDate}" style="width:130px"></div>
+          <div class="form-group" style="flex:1"><label>Raison</label><input type="text" id="ren_raison_${idx}" placeholder="Motif du renvoi…" style="width:100%"></div>
+          <div class="form-group"><label>Note (opt.)</label><input type="text" id="ren_note_${idx}" placeholder="Détail…" style="width:110px"></div>
+          <button class="btn prim" style="align-self:flex-end" onclick="addRenvoi(${idx})">+ Renvoi</button>
+        </div>
+      </div>
+    </div>`;
+}
+
+function refreshBlock(idx) {
+  const sd=gs(ELEVES[idx]);
+  const nT=sd.tickets.length,nR=sd.retenues.length,nRen=(sd.renvois||[]).length;
+  const block=document.getElementById('block_'+idx);
+  if(block){
+    const pillsEl=block.querySelector('.san-pills');
+    if(pillsEl){
+      let pills='';
+      if(nT) pills+=`<span class="pill pill-ticket">🎫 ${nT} ticket${nT>1?'s':''}</span>`;
+      if(nR) pills+=`<span class="pill pill-retenue">⏱ ${nR} retenue${nR>1?'s':''}</span>`;
+      if(nRen) pills+=`<span class="pill pill-renvoi">🚫 ${nRen} renvoi${nRen>1?'s':''}</span>`;
+      if(!nT&&!nR&&!nRen) pills=`<span style="font-size:12px;color:var(--text3)">Aucune sanction</span>`;
+      pillsEl.innerHTML=pills;
+    }
+  }
+  renderSanBody(idx);
+  renderStudents();
+  scheduleSave();
+}
+
+window.addTicket = function(idx) {
+  const dateVal=document.getElementById('tk_date_'+idx)?.value;
+  const raison=document.getElementById('tk_raison_'+idx)?.value?.trim();
+  if(!dateVal||!raison){ alert('Merci d\'indiquer une date et une raison.'); return; }
+  gs(ELEVES[idx]).tickets.push({date:fmtDate(dateVal),raison,note:document.getElementById('tk_note_'+idx)?.value?.trim()||''});
+  refreshBlock(idx);
+}
+window.addRetenue = function(idx) {
+  const dateVal=document.getElementById('ret_date_'+idx)?.value;
+  if(!dateVal){ alert('Merci d\'indiquer une date.'); return; }
+  gs(ELEVES[idx]).retenues.push({date:fmtDate(dateVal),note:document.getElementById('ret_note_'+idx)?.value?.trim()||'',effectuee:document.getElementById('ret_eff_'+idx)?.checked||false});
+  refreshBlock(idx);
+}
+window.addRenvoi = function(idx) {
+  const dateVal=document.getElementById('ren_date_'+idx)?.value;
+  const raison=document.getElementById('ren_raison_'+idx)?.value?.trim();
+  if(!dateVal||!raison){ alert('Merci d\'indiquer une date et une raison.'); return; }
+  if(!st.sanctions[ELEVES[idx]].renvois) st.sanctions[ELEVES[idx]].renvois=[];
+  gs(ELEVES[idx]).renvois.push({date:fmtDate(dateVal),raison,note:document.getElementById('ren_note_'+idx)?.value?.trim()||''});
+  refreshBlock(idx);
+}
+window.delTicket = function(idx,i){ if(!confirm('Supprimer ce ticket ?')) return; gs(ELEVES[idx]).tickets.splice(i,1); refreshBlock(idx); }
+window.delRetenue = function(idx,i){ if(!confirm('Supprimer cette retenue ?')) return; gs(ELEVES[idx]).retenues.splice(i,1); refreshBlock(idx); }
+window.delRenvoi = function(idx,i){ if(!confirm('Supprimer ce renvoi ?')) return; gs(ELEVES[idx]).renvois.splice(i,1); refreshBlock(idx); }
+
+// ── Init ──
+loadFromFirebase();
+</script>
+</body>
+</html>
