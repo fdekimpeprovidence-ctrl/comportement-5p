@@ -247,6 +247,7 @@ table.recap tr:hover td { background: var(--bg); }
     </select>
     <button class="btn" onclick="exportData()" title="Exporter les données">💾</button>
     <button class="btn" onclick="importData()" title="Importer les données">📂</button>
+    <button class="btn" onclick="resetData()" title="Réinitialiser" style="color:var(--red)">🗑</button>
   </div>
 </div>
 
@@ -746,6 +747,16 @@ window.addRenvoi = function(idx) {
 window.delTicket = function(idx,i){ if(!confirm('Supprimer ce ticket ?')) return; gs(ELEVES[idx]).tickets.splice(i,1); refreshBlock(idx); }
 window.delRetenue = function(idx,i){ if(!confirm('Supprimer cette retenue ?')) return; gs(ELEVES[idx]).retenues.splice(i,1); refreshBlock(idx); }
 window.delRenvoi = function(idx,i){ if(!confirm('Supprimer ce renvoi ?')) return; gs(ELEVES[idx]).renvois.splice(i,1); refreshBlock(idx); }
+
+window.resetData = async function() {
+  if(!confirm('Réinitialiser TOUTES les données ? Cette action est irréversible.')) return;
+  if(!confirm('Dernière confirmation — toutes les données seront effacées définitivement.')) return;
+  st = initState();
+  await saveToFirebase();
+  renderStudents();
+  showSync('✓ Données réinitialisées', false);
+  alert('Toutes les données ont été effacées.');
+}
 
 // ── Export / Import ──
 window.exportData = function() {
