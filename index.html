@@ -521,13 +521,17 @@ window.addM = function(i, type, delta) {
   const newVal = Math.max(0, d[type][i]+delta);
   if(newVal === d[type][i]) return; // rien ne change (déjà à 0)
   d[type][i] = newVal;
+  const label = type==='bad' ? BAD[i] : GOOD[i];
   if(delta > 0) {
-    // Ajout : on enregistre dans l'historique
-    d.hist.push({date:today(),label:type==='bad'?BAD[i]:GOOD[i],type,delta});
+    d.hist.push({date:today(), label, type, delta});
   } else {
-    // Suppression : on retire la dernière entrée correspondante de l'historique
-    const lastIdx = [...d.hist].map((h,idx)=>({h,idx})).reverse().find(({h})=>h.label===(type==='bad'?BAD[i]:GOOD[i])&&h.type===type&&h.delta>0)?.idx;
-    if(lastIdx !== undefined) d.hist.splice(lastIdx, 1);
+    // Suppression : retire la dernière entrée positive correspondante
+    for(let k=d.hist.length-1; k>=0; k--) {
+      if(d.hist[k].label===label && d.hist[k].type===type && d.hist[k].delta>0) {
+        d.hist.splice(k, 1);
+        break;
+      }
+    }
   }
   scheduleSave(); renderModal();
 }
