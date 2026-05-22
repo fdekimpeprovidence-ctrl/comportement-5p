@@ -7,6 +7,8 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Comportement 5P">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
@@ -243,6 +245,8 @@ table.recap tr:hover td { background: var(--bg); }
       <option value="T2">Trimestre 2</option>
       <option value="T3" selected>Trimestre 3</option>
     </select>
+    <button class="btn" onclick="exportData()" title="Exporter les données">💾</button>
+    <button class="btn" onclick="importData()" title="Importer les données">📂</button>
   </div>
 </div>
 
@@ -513,8 +517,18 @@ function renderModal() {
 }
 
 window.addM = function(i, type, delta) {
-  const d=gd(curEl); d[type][i]=Math.max(0,d[type][i]+delta);
-  d.hist.push({date:today(),label:type==='bad'?BAD[i]:GOOD[i],type,delta});
+  const d=gd(curEl);
+  const newVal = Math.max(0, d[type][i]+delta);
+  if(newVal === d[type][i]) return; // rien ne change (déjà à 0)
+  d[type][i] = newVal;
+  if(delta > 0) {
+    // Ajout : on enregistre dans l'historique
+    d.hist.push({date:today(),label:type==='bad'?BAD[i]:GOOD[i],type,delta});
+  } else {
+    // Suppression : on retire la dernière entrée correspondante de l'historique
+    const lastIdx = [...d.hist].map((h,idx)=>({h,idx})).reverse().find(({h})=>h.label===(type==='bad'?BAD[i]:GOOD[i])&&h.type===type&&h.delta>0)?.idx;
+    if(lastIdx !== undefined) d.hist.splice(lastIdx, 1);
+  }
   scheduleSave(); renderModal();
 }
 window.saveNote = function() { gd(curEl).note=document.getElementById('noteField').value; scheduleSave(); }
@@ -728,6 +742,39 @@ window.addRenvoi = function(idx) {
 window.delTicket = function(idx,i){ if(!confirm('Supprimer ce ticket ?')) return; gs(ELEVES[idx]).tickets.splice(i,1); refreshBlock(idx); }
 window.delRetenue = function(idx,i){ if(!confirm('Supprimer cette retenue ?')) return; gs(ELEVES[idx]).retenues.splice(i,1); refreshBlock(idx); }
 window.delRenvoi = function(idx,i){ if(!confirm('Supprimer ce renvoi ?')) return; gs(ELEVES[idx]).renvois.splice(i,1); refreshBlock(idx); }
+
+// ── Export / Import ──
+window.exportData = function() {
+  const json = JSON.stringify(st, null, 2);
+  const blob = new Blob([json], {type:'application/json'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `comportement_5P_${curT}_${new Date().toISOString().slice(0,10)}.json`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  showSync('💾 Export téléchargé', false);
+}
+
+window.importData = function() {
+  const inp = document.createElement('input');
+  inp.type = 'file'; inp.accept = '.json';
+  inp.onchange = e => {
+    const r = new FileReader();
+    r.onload = async ev => {
+      try {
+        st = JSON.parse(ev.target.result);
+        ensureState();
+        await saveToFirebase();
+        renderStudents();
+        showSync('✓ Données importées et synchronisées', false);
+        alert('Importé avec succès ! Les données sont maintenant synchronisées sur tous vos appareils.');
+      } catch { alert('Fichier invalide.'); }
+    };
+    r.readAsText(e.target.files[0]);
+  };
+  inp.click();
+}
 
 // ── Init ──
 loadFromFirebase();
